@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intento de Juego</title>
+    <style>
+        /* Manteniendo el mismo estilo, con ligeras modificaciones */
+        * { padding:0; margin:0; }
+        body { height: 100vh; background: #584040; display: flex; align-items: center; }
+        .contenedor { width: 920px; height: 280px; margin: 0 auto; position: relative; background: linear-gradient(#b7d6c7,#ffe2d1); overflow: hidden; }
+        .dino { width: 84px; height: 84px; position: absolute; bottom: 22px; left: 42px; z-index:2; background:url(dino.png) repeat-x 0px 0px; background-size: 336px 84px; background-position-x: 0px; }
+        .dino-corriendo { animation: animarDino 0.25s steps(2) infinite; }
+        .dino-estrellado { background-position-x: -252px; }
+        .suelo { width: 200%; height:42px; position:absolute; bottom: 0; left:0; background: url(suelo.png) repeat-x 0px 0px; background-size: 50% 42px; }
+        .puntuacion { width: 100px; height: 30px; position: absolute; top: 5px; right:15px; z-index:10; color:#D48872; font-family:Verdana; font-size: 30px; font-weight: bold; text-align: right; }
+        .cactus { width: 46px; height: 96px; position: absolute; bottom: 16px; left: 600px; z-index: 1; background: url(cactus1.png) repeat-x 0px 0px; }
+        .game-over { display: none; position: absolute; width: 100%; text-align: center; color: #7e928b; font-size: 30px; font-family: Verdana; font-weight: 700; }
+        .inicio { display: flex; justify-content: center; align-items: center; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); position: absolute; color: white; font-size: 2em; z-index: 10; }
+        .inicio button { font-size: 1em; padding: 10px 20px; }
+        @keyframes animarDino { from { background-position-x: -84px; } to { background-position-x: -252px; } }
+    </style>
+</head>
+<body>
+    <div class="contenedor">
+        <div class="inicio">
+            <div>
+                <p>SAVE THE DINO</p>
+                <button onclick="IniciarJuego()">COMENZAR</button>
+            </div>
+        </div>
+        <div class="suelo"></div>
+        <div class="dino dino-corriendo"></div>
+        <div class="puntuacion">0</div>
+        <div class="game-over">
+            GAME OVER <br>
+            <button onclick="ReiniciarJuego()">REINICIAR</button>
+        </div>
+    </div>
+
+<script>
+    var time = new Date(), deltaTime = 0;
+    var sueloY = 22, velY = 0, impulso = 900, gravedad = 2500;
+    var dinoPosX = 42, dinoPosY = sueloY;
+    var sueloX = 0, velEscenario = 1280 / 3, gameVel = 1, puntuacion = 0;
+    var parado = false, saltando = false;
+    var tiempoHastaObstaculo = 2, tiempoObstaculoMin = 0.7, tiempoObstaculoMax = 1.8, obstaculoPosY = 16, obstaculos = [];
+    var contenedor, dino, textoScore, suelo, gameOver, pantallaInicio;
+
+    function Init() {
+        gameOver = document.querySelector(".game-over");
+        pantallaInicio = document.querySelector(".inicio");
+        suelo = document.querySelector(".suelo");
+        contenedor = document.querySelector(".contenedor");
+        textoScore = document.querySelector(".puntuacion");
+        dino = document.querySelector(".dino");
+
+        document.addEventListener("keydown", HandleKeyDown);
+        document.addEventListener("touchstart", Saltar);  // Para móviles
+    }
+
+    function IniciarJuego() {
+        pantallaInicio.style.display = "none";
+        Start();
+        Loop();
+    }
+
+    function ReiniciarJuego() {
+        location.reload();
+    }
+
+    function Start() {
+        parado = false;
+        puntuacion = 0;
+        gameVel = 1;
+        dino.classList.add("dino-corriendo");
+        dino.classList.remove("dino-estrellado");
+    }
+
+    function Loop() {
+        deltaTime = (new Date() - time) / 1000;
+        time = new Date();
+        Update();
+        requestAnimationFrame(Loop);
+    }
+
+    function Update() {
+        if (parado) return;
+        MoverSuelo();
+        MoverDinosaurio();
+        DecidirCrearObstaculos();
+        MoverObstaculos();
+        DetectarColision();
+        velY -= gravedad * deltaTime;
+    }
+
+    function HandleKeyDown(ev) {
+        if (ev.keyCode === 32) Saltar();
+    }
+
+    function Saltar() {
+        if (dinoPosY === sueloY) {
+            saltando = true;
+            velY = impulso;
+            dino.classList.remove("dino-corriendo");
+        }
+    }
+
+    function MoverSuelo() {
+        sueloX += CalcularDesplazamiento();
+        suelo.style.left = -(sueloX % contenedor.clientWidth) + "px";
+    }
+
+    function CalcularDesplazamiento() {
+        return velEscenario * deltaTime * gameVel;
+    }
+
+    function MoverDinosaurio() {
+        dinoPosY += velY * deltaTime;
+        if (dinoPosY < sueloY) TocarSuelo();
+        dino.style.bottom = dinoPosY + "px";
+    }
+
+    function TocarSuelo() {
+        dinoPosY = sueloY;
+        velY = 0;
+        if (saltando) dino.classList.add("dino-corriendo");
+        saltando = false;
+    }
+
+    function DecidirCrearObstaculos() {
+        tiempoHastaObstaculo -= deltaTime;
+        if (tiempoHastaObstaculo <= 0) CrearObstaculo();
+    }
+
+    function CrearObstaculo() {
+        var obstaculo = document.createElement("div");
+        contenedor.appendChild(obstaculo);
+        obstaculo.classList.add("cactus");
+        obstaculo.posX = contenedor.clientWidth;
+        obstaculo.style.left = contenedor.clientWidth + "px";
+        obstaculos.push(obstaculo);
+        tiempoHastaObstaculo = tiempoObstaculoMin + Math.random() * (tiempoObstaculoMax - tiempoObstaculoMin) / gameVel;
+    }
+
+    function MoverObstaculos() {
+        for (var i = obstaculos.length - 1; i >= 0; i--) {
+            if (obstaculos[i].posX < -obstaculos[i].clientWidth) {
+                obstaculos[i].parentNode.removeChild(obstaculos[i]);
+                obstaculos.splice(i, 1);
+                GanarPuntos();
+            } else {
+                obstaculos[i].posX -= CalcularDesplazamiento();
+                obstaculos[i].style.left = obstaculos[i].posX + "px";
+            }
+        }
+    }
+
+    function GanarPuntos() {
+        puntuacion++;
+        textoScore.innerText = puntuacion;
+    }
+
+    function DetectarColision() {
+        for (var i = 0; i < obstaculos.length; i++) {
+            if (obstaculos[i].posX > dinoPosX + dino.clientWidth) {
+                break;
+            } else {
+                if (IsCollision(dino, obstaculos[i], 10, 30, 15, 20)) GameOver();
+            }
+        }
+    }
+
+    function IsCollision(a, b, paddingTop, paddingRight, paddingBottom, paddingLeft) {
+        var aRect = a.getBoundingClientRect();
+        var bRect = b.getBoundingClientRect();
+        return !(
+            ((aRect.top + aRect.height - paddingBottom) < (bRect.top)) ||
+            (aRect.top + paddingTop > (bRect.top + bRect.height)) ||
+            ((aRect.left + aRect.width - paddingRight) < bRect.left) ||
+            (aRect.left + paddingLeft > (bRect.left + bRect.width))
+        );
+    }
+
+    function GameOver() {
+        dino.classList.remove("dino-corriendo");
+        dino.classList.add("dino-estrellado");
+        parado = true;
+        gameOver.style.display = "block";
+    }
+
+    document.addEventListener("DOMContentLoaded", Init);
+</script>
+</body>
+</html>
