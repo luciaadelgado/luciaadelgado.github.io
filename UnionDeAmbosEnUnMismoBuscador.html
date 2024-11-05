@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seleccionar Juego</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f9;
+            margin: 0;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            color: #fff;
+            background-color: #007bff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .output {
+            margin-top: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Selecciona un juego</h2>
+    <select id="fileSelect">
+        <option value="" disabled selected>Elige un juego...</option>
+        <option value="https://luciaadelgado.github.io/juego2.html">Jumping Monkey</option>
+        <option value="https://luciaadelgado.github.io/juego.html">Save the Dino</option>
+    </select>
+    <button onclick="seleccionarJuego()">Seleccionar</button>
+    <div class="output" id="output"></div>
+</div>
+
+<script>
+    function seleccionarJuego() {
+        const selectElement = document.getElementById("fileSelect");
+        const selectedGame = selectElement.value;
+        const outputElement = document.getElementById("output");
+
+        if (selectedGame) {
+            // Redirigir a la URL seleccionada
+            window.location.href = selectedGame;
+        } else {
+            outputElement.textContent = "Por favor, selecciona un juego.";
+        }
+    }
+</script>
+
+</body>
+</html>
